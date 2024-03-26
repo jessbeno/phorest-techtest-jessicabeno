@@ -161,6 +161,7 @@ query = '''SELECT clients.*, SUM(purchases.loyalty_points) AS total_loyalty_poin
             JOIN appointments ON clients.id = appointments.client_id
             JOIN purchases ON appointments.id = purchases.appointment_id
             WHERE DATE(SUBSTR(appointments.end_time, 1, LENGTH(appointments.end_time) - 5)) >= ?
+            AND clients.banned != 1
             GROUP BY clients.id
             ORDER BY total_loyalty_points DESC
             LIMIT ?;
