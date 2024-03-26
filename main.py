@@ -9,6 +9,7 @@ Created on Tue Mar 26 06:34:34 2024
 import os, sys
 import pandas as pd
 import sqlite3
+import json
 
 def utility_parse_data(infile_path):
     '''
@@ -27,7 +28,6 @@ def utility_parse_data(infile_path):
     storage = list()
     
     for idx, row in df.iterrows():
-        print(row)
         storage.append(row)
         
     return storage
@@ -66,6 +66,12 @@ infile_clients = 'clients.csv'
 infile_appts = 'appointments.csv'
 infile_purch = 'purchases.csv'
 infile_serv = 'services.csv'
+
+print('Enter top X number: ')
+query_topxnumber = input()
+
+print('Enter since date: (format as 2018-01-01)')
+query_since_date = input()
 
 # Obtain current directory
 dir_main = os.getcwd()
@@ -143,4 +149,36 @@ populate_table(db_name, storage, col_names, 'purchases')
 col_names = 'id,appointment_id,name,price,loyalty_points'
 storage = utility_parse_data(path_serv)
 populate_table(db_name, storage, col_names, 'services')
+
+# Query - Top X number of clients that have accumulated the most loyalty points since Y date
+db_conn = sqlite3.connect(db_name)
+
+cur = db_conn.cursor()
+            
+parameters = (query_since_date, query_topxnumber)
+query = '''SELECT clients.*, SUM(purchases.loyalty_points) AS total_loyalty_points
+            FROM clients 
+            JOIN appointments ON clients.id = appointments.client_id
+            JOIN purchases ON appointments.id = purchases.appointment_id
+            WHERE DATE(SUBSTR(appointments.end_time, 1, LENGTH(appointments.end_time) - 5)) >= ?
+            GROUP BY clients.id
+            ORDER BY total_loyalty_points DESC
+            LIMIT ?;
+            '''
+
+query_store = db_conn.execute(query, parameters)
+rows = query_store.fetchall()
+
+db_conn.close()
+
+
+# Convert to json compatible object
+
+cols = [col[0] for col in query_store.description]
+
+results = [dict(zip(cols, row)) for row in rows]
+
+json_results = json.dumps(results)
+
+
 
