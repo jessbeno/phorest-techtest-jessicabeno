@@ -10,6 +10,27 @@ import os, sys
 import pandas as pd
 import sqlite3
 
+def populate_table(db_name, data, col_names, table_name):
+    '''
+    This function inserts data into the specified table.
+    
+    args:
+        db_name (str):      Name of the database
+        data (list):        List of lists (each list is a row of the database)
+        col_names (str):    Comma-delimited string of the column names
+        table_name (str):   Name of the table to insert the data into
+    '''
+    
+    # Create the database
+    db_conn = sqlite3.connect(db_name)
+
+    cur = db_conn.cursor()
+    
+    
+    
+    db_conn.close()
+
+
 # User settings
 db_name = 'client_data.db'
 infile_clients = 'clients.csv'
@@ -51,20 +72,25 @@ db_conn.execute('''CREATE TABLE appointments
 (id VARCHAR(50) PRIMARY KEY,
 client_id VARCHAR(50),
 start_time DATETIME,
-end_time DATETIME);''')
+end_time DATETIME,
+FOREIGN KEY (client_id) REFERENCES clients (id));''')
 
 db_conn.execute('''CREATE TABLE purchases
 (id VARCHAR(50) PRIMARY KEY,
 appointment_id VARCHAR(50),
 name VARCHAR(50),
 price DECIMAL(10,2),
-loyalty_points INT);''')
+loyalty_points INT,
+FOREIGN KEY (appointment_id) REFERENCES appointments (id));''')
 
 db_conn.execute('''CREATE TABLE services
 (id VARCHAR(50) PRIMARY KEY,
 appointment_id VARCHAR(50),
 name VARCHAR(50),
 price DECIMAL(10,2),
-loyalty_points INT);''')
+loyalty_points INT,
+FOREIGN KEY (appointment_id) REFERENCES appointments (id));''')
 
 db_conn.close()
+
+# Populate tables
