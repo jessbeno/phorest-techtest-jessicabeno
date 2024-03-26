@@ -10,6 +10,29 @@ import os, sys
 import pandas as pd
 import sqlite3
 
+def utility_parse_data(infile_path):
+    '''
+    Reads in data to pandas df. Iterates over rows. Stores rows into list.
+    
+    args:
+        infile_path (str):  Path to the specified infile.
+        
+    returns:
+        storage (list):     List of lists. Each row of infile is stored as a list.
+    
+    '''
+    
+    df = pd.read_csv(infile_path)
+    
+    storage = list()
+    
+    for idx, row in df.iterrows():
+        print(row)
+        storage.append(row)
+        
+    return storage
+
+
 def populate_table(db_name, data, col_names, table_name):
     '''
     This function inserts data into the specified table.
@@ -26,6 +49,12 @@ def populate_table(db_name, data, col_names, table_name):
 
     cur = db_conn.cursor()
     
+    # Add the data:
+    #db_conn.executemany('INSERT INTO %s (%s) VALUES (?,?,?,?,?,?,?);' % (table_name,col_names),data)
+    bindings_str = ','.join(['?' for i in col_names.split(',')])
+    db_conn.executemany('INSERT INTO %s (%s) VALUES (%s);' % (table_name, col_names, bindings_str), data)
+
+    db_conn.commit()
     
     
     db_conn.close()
@@ -93,4 +122,25 @@ FOREIGN KEY (appointment_id) REFERENCES appointments (id));''')
 
 db_conn.close()
 
+        
 # Populate tables
+# Populate clients table
+col_names = 'id,first_name,last_name,email,phone,gender,banned'
+storage = utility_parse_data(path_clients)
+populate_table(db_name, storage, col_names, 'clients')
+
+# Populate appointments table
+col_names = 'id,client_id,start_time,end_time'
+storage = utility_parse_data(path_appts)
+populate_table(db_name, storage, col_names, 'appointments')
+
+# Populate purchases table
+col_names = 'id,appointment_id,name,price,loyalty_points'
+storage = utility_parse_data(path_purch)
+populate_table(db_name, storage, col_names, 'purchases')
+
+# Populate services table
+col_names = 'id,appointment_id,name,price,loyalty_points'
+storage = utility_parse_data(path_serv)
+populate_table(db_name, storage, col_names, 'services')
+
